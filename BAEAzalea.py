@@ -74,9 +74,11 @@ def run(i):
         simulationTime, simulationTimeStep, numDataPoints
     )
 
+    '''
     scObjects = []
     dataRecs = []
 
+    
     # Create 4 spacecraft equally spaced by 90 degrees (0, 90, 180, 270 deg)
     for k in range(3):
         scObject = spacecraft.Spacecraft()
@@ -99,11 +101,23 @@ def run(i):
         dataRecs.append(dataRec)
 
     '''
-    if vizSupport.vizFound:
-        viz = vizSupport.enableUnityVisualization(scSim, simTaskName, scObjects)#
-    '''
+    scObject = spacecraft.Spacecraft()
+    scObject.ModelTag = f"BAE-Azalea-Sat"
 
-    viz = vizSupport.enableUnityVisualization(scSim, simTaskName, scObjects)
+    scSim.AddModelToTask(simTaskName, scObject)
+    gravFactory.addBodiesTo(scObject)
+
+    oe_k = copy(oe)
+    oe_k.f = oe.f + ( 90.0) * macros.D2R
+    rN, vN = orbitalMotion.elem2rv(mu, oe_k)
+
+    scObject.hub.r_CN_NInit = rN  # m
+    scObject.hub.v_CN_NInit = vN  # m/s
+
+    dataRec = scObject.scStateOutMsg.recorder(samplingTime)
+    scSim.AddModelToTask(simTaskName, dataRec)
+
+    viz = vizSupport.enableUnityVisualization(scSim, simTaskName, scObject)
 
     # Initialize a non-blocking TCP socket server for user interaction
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -114,57 +128,49 @@ def run(i):
 
     scSim.InitializeSimulation()
     sim_time = 0.0
-    step_size = 1.0  # 1-second chunks
-    count = 0.0
-    show_tel = simulationTime/100
+    step_size = 1.0  
 
-    try:
-        while sim_time < simulationTime:
+    print(f'Starting simulation')
+    #try:
+    while sim_time < simulationTime:
             sim_time += step_size
             scSim.ConfigureStopTime(macros.sec2nano(sim_time))
             scSim.ExecuteSimulation()
-            #state_msg = scObjects[0].scStateOutMsg.read()
+            state_msg = scObject.scStateOutMsg.read()
             # 2. Extract telemetry / status
             current_state = {
             "time": sim_time,
-            "position": dataRecs[0].r_BN_N,
-            "velocity": dataRecs[1].v_BN_N
+            #"position": dataRecs[0].r_BN_N,
+            #"velocity": dataRecs[1].v_BN_N
+            "position": state_msg.r_BN_N,
+            "velocity": state_msg.v_BN_N
             }
-
-             
-            count += show_tel/1000
-            if count >= show_tel:
-                print(f"Time: {sim_time}s | Pos: {current_state['position']}")
-                count = 0.0            
 
             # 1. Non-blocking check for incoming user commands
             try:
                 client_socket, addr = server_socket.accept()
                 client_socket.setblocking(True)
                 data = client_socket.recv(1024).decode()
-                if data:
-                    cmd = json.loads(data)
-                    # Example command: {"action": "set_target", "value": [1.0, 0.0, 0.0]}
-                    if cmd.get("action") == "set_target":
+                #if data:
+                cmd = json.loads(data)
+                # Example command: {"action": "set_target", "value": [1.0, 0.0, 0.0]}
+                if cmd.get("action") == "set_target":
                         # Dynamically update a module variable in Python
                         #myGuidanceModule.sigma_R = cmd.get("value")
                         print(f"Command applied at t={sim_time}s")
                         print(f"Time: {sim_time}s | Pos: {current_state['position']}")
-                    elif cmd.get("action") == "exit":
+                elif cmd.get("action") == "exit":
+                        print(f'Shutting down and quitting...\n')
                         sim_time = simulationTime
+                client_socket.sendall(json.dumps({"status": "acknowledged"}).encode())
                 client_socket.close()
             except BlockingIOError:
                 pass  # No incoming connection this step; continue simulation
+    server_socket.close()
 
-    # (Optional) You can push this status to an active telemetry socket or log it
-    finally:
-        server_socket.close()
+    print(f'Simulation ended\n')
 
     '''
-    scSim.ConfigureStopTime(simulationTime)
-    scSim.ExecuteSimulation()
-    '''
-
     posDataList = [rec.r_BN_N for rec in dataRecs]
     velDataList = [rec.v_BN_N for rec in dataRecs]
 
@@ -182,9 +188,11 @@ def run(i):
 
     plt.show()
     plt.close("all")
-    
+
+        
 
     return finalDiff, figureList
+    '''
 
 
 def plotOrbits(

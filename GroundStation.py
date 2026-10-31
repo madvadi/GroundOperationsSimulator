@@ -1,33 +1,29 @@
+from time import sleep
 import socket, json 
-
-
-print(f'This is the console for the Ground Station\n')
-
 
 host = "127.0.0.1"
 port = 8080
 
-client  = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect((host, port))
+def send_2sc(action = "set_target", value = None):
+    client  = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client.connect((host, port))
 
-action = 'get_status'
-value = None
+    payload = {
+    "action": action, #"set_target",
+    "value": value #[1.0, 0.0, 0.0]
+    }
 
-payload = {
-    "action": "set_target",
-    "value": [1.0, 0.0, 0.0]
-}
+    client.sendall(json.dumps(payload).encode())
+    response = client.recv(1024).decode()
+    print(f"Server response: {response}")
+    client.close()
 
-payload = {
-    "action": "exit"
-    #"value": [1.0, 0.0, 0.0]
-}
+if __name__ == "__main__":
+    print(f'This is the console for the Ground Station\n')
+    
+    
+    send_2sc(value = [1.0, 0.0, 0.0])
 
+    sleep(5)
 
-client.sendall(json.dumps(payload).encode())
-response = client.recv(4096).decode()
-client.close()
-#output = json.loads(response)
-
-print(f'output = {response}\n')
-
+    send_2sc(action = "exit") 
