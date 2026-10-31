@@ -131,13 +131,11 @@ def run(i):
             "velocity": dataRecs[1].v_BN_N
             }
 
-            '''
+             
             count += show_tel/1000
             if count >= show_tel:
                 print(f"Time: {sim_time}s | Pos: {current_state['position']}")
-                count = 0.0
-
-            '''
+                count = 0.0            
 
             # 1. Non-blocking check for incoming user commands
             try:
