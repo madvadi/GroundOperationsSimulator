@@ -1,6 +1,8 @@
 import os
 from copy import copy
 
+import cmd
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -23,6 +25,8 @@ from Basilisk.utilities import simHelpers
 
 import socket
 import json
+
+import cmdAction
 
 def run(i):
     simTaskName = "simTask"
@@ -74,33 +78,6 @@ def run(i):
         simulationTime, simulationTimeStep, numDataPoints
     )
 
-    '''
-    scObjects = []
-    dataRecs = []
-
-    
-    # Create 4 spacecraft equally spaced by 90 degrees (0, 90, 180, 270 deg)
-    for k in range(3):
-        scObject = spacecraft.Spacecraft()
-        scObject.ModelTag = f"bsk-Sat-{k}"
-
-        scSim.AddModelToTask(simTaskName, scObject)
-        gravFactory.addBodiesTo(scObject)
-
-        oe_k = copy(oe)
-        oe_k.f = oe.f + (k * 90.0) * macros.D2R
-        rN, vN = orbitalMotion.elem2rv(mu, oe_k)
-
-        scObject.hub.r_CN_NInit = rN  # m
-        scObject.hub.v_CN_NInit = vN  # m/s
-
-        dataRec = scObject.scStateOutMsg.recorder(samplingTime)
-        scSim.AddModelToTask(simTaskName, dataRec)
-
-        scObjects.append(scObject)
-        dataRecs.append(dataRec)
-
-    '''
     scObject = spacecraft.Spacecraft()
     scObject.ModelTag = f"BAE-Azalea-Sat"
 
@@ -128,14 +105,17 @@ def run(i):
 
     scSim.InitializeSimulation()
     sim_time = 0.0
-    step_size = 1.0  
+    step_size = 1.0 
 
-    print(f'Starting simulation')
-    #try:
+    handler = cmdAction.ActionHandler( scObject)
+
+    print(f'Starting Simulation')
+
     while sim_time < simulationTime:
             sim_time += step_size
             scSim.ConfigureStopTime(macros.sec2nano(sim_time))
             scSim.ExecuteSimulation()
+            '''
             state_msg = scObject.scStateOutMsg.read()
             # 2. Extract telemetry / status
             current_state = {
@@ -145,6 +125,7 @@ def run(i):
             "position": state_msg.r_BN_N,
             "velocity": state_msg.v_BN_N
             }
+            '''
 
             # 1. Non-blocking check for incoming user commands
             try:
@@ -153,16 +134,9 @@ def run(i):
                 data = client_socket.recv(1024).decode()
                 #if data:
                 cmd = json.loads(data)
-                # Example command: {"action": "set_target", "value": [1.0, 0.0, 0.0]}
-                if cmd.get("action") == "set_target":
-                        # Dynamically update a module variable in Python
-                        #myGuidanceModule.sigma_R = cmd.get("value")
-                        print(f"Command applied at t={sim_time}s")
-                        print(f"Time: {sim_time}s | Pos: {current_state['position']}")
-                elif cmd.get("action") == "exit":
-                        print(f'Shutting down and quitting...\n')
-                        sim_time = simulationTime
-                client_socket.sendall(json.dumps({"status": "acknowledged"}).encode())
+                # Example command: {"action": "set_target", "value": [1.0, 0.0, 0.0]} 
+                response = handler[cmd.get("action")](sim_time, cmd) 
+                client_socket.sendall(response.encode())#json.dumps({"status": "acknowledged"}).encode())
                 client_socket.close()
             except BlockingIOError:
                 pass  # No incoming connection this step; continue simulation

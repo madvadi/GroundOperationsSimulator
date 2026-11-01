@@ -22,8 +22,8 @@ if __name__ == "__main__":
     print(f'This is the console for the Ground Station\n')
     
     
-    send_2sc(value = [1.0, 0.0, 0.0])
+    send_2sc(action = "set_target",value = [1.0, 0.0, 0.0])
 
     sleep(5)
 
-    send_2sc(action = "exit") 
+    send_2sc(action = "exit",value = None) 
