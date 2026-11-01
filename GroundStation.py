@@ -24,6 +24,6 @@ if __name__ == "__main__":
     
     send_2sc(action = "set_target",value = [1.0, 0.0, 0.0])
 
-    sleep(5)
+    #sleep(5)
 
     send_2sc(action = "exit",value = None) 

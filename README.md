@@ -1,2 +1,2 @@
 # GroundOperationsSimulator
-This is a example of running a ground station for a LEO spacecraft.
+This is a example of running a ground station for a LEO spacecraft. The simulation is for a single spacecraft modelled after Az...

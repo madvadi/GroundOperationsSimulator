@@ -96,6 +96,10 @@ def run(i):
 
     viz = vizSupport.enableUnityVisualization(scSim, simTaskName, scObject)
 
+    viz.comProtocol = "tcp"
+    viz.comAddress = "127.0.0.1"
+    viz.comPortNumber = "5556"
+
     # Initialize a non-blocking TCP socket server for user interaction
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
