@@ -1,5 +1,7 @@
 from time import sleep
 import socket, json 
+import re
+
 
 host = "127.0.0.1"
 port = 8080
@@ -19,11 +21,29 @@ def send_2sc(action = "set_target", value = None):
     client.close()
 
 if __name__ == "__main__":
-    print(f'This is the console for the Ground Station\n')
-    
-    
-    send_2sc(action = "set_target",value = [1.0, 0.0, 0.0])
+    print(f'This is the console for the Ground Station.')
+    print(f'Making initial connection...\n')
+    print(f'Enter commands in the form [action cmd]:[value]\n')
 
-    #sleep(5)
+    exitB = False
 
-    send_2sc(action = "exit",value = None) 
+    while exitB == False:
+
+        msg = input()
+
+        res = re.split(r'[:]',msg)
+
+        if len(res) < 2:
+            print(f'Enter commands in the form [action cmd]:[value]\n')
+            continue
+
+        action = res[0]
+        value = res[1]
+
+        print(f'You entered:\naction={action}\nvalue={value}')
+
+        send_2sc(action = action, value = value)
+
+        if action == 'exit':
+            exitB = True
+

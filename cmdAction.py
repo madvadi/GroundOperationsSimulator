@@ -36,8 +36,10 @@ def ActionHandler( scObject):
         
         # Depending on your guidance module, 'sigma_R' might expect a float, int, or list/vector.
         # Adjust allowed types here as needed:
-        if not isinstance(val, (int, float, list)):
+        if not isinstance(val, (str)):
             raise TypeError(f"Expected 'value' to be a number or list for 'set_target', got {val_type}.")
+
+        set_target = np.array(json.loads(val))
 
         state_msg = scObject.scStateOutMsg.read()
             # 2. Extract telemetry / status
@@ -52,7 +54,9 @@ def ActionHandler( scObject):
         # 3. Print simulation logs
         print(f"Command applied at t={sim_time}s")
         print(f"Time: {sim_time}s | Pos: {current_state.get('position', 'Unknown')}")
-        
+        print(f'Set Target: {set_target}')
+
+
         return json.dumps({"status": "Execute the function set_target"})
 
     def _handle_exit(sim_time : float, data: dict) :
